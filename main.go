@@ -8,21 +8,15 @@ import (
 	layers "github.com/google/gopacket/layers"
 )
 
-var records map[string]string
+var records map[string]string = map[string]string{
+	"google.com": "216.58.196.142",
+	"amazon.com": "176.32.103.205",
+}
 
 func main() {
-	records = map[string]string{
-		"google.com": "216.58.196.142",
-		"amazon.com": "176.32.103.205",
-	}
-
-	//Listen on UDP Port
-	addr := net.UDPAddr{
-		Port: 8090,
-	}
+	addr := net.UDPAddr{Port: 8090}
 	u, _ := net.ListenUDP("udp", &addr)
 
-	// Wait to get request on that port
 	for {
 		tmp := make([]byte, 1024)
 		_, addr, _ := u.ReadFrom(tmp)
@@ -35,33 +29,41 @@ func main() {
 }
 
 func serveDNS(u *net.UDPConn, clientAddr net.Addr, request *layers.DNS) {
-	replyMess := request
-	var dnsAnswer layers.DNSResourceRecord
-	dnsAnswer.Type = layers.DNSTypeA
-	var ip string
-	var err error
-	var ok bool
-	ip, ok = records[string(request.Questions[0].Name)]
-	if !ok {
-		//Todo: Log no data present for the IP and handle:todo
-	}
-	a, _, _ := net.ParseCIDR(ip + "/24")
-	dnsAnswer.Type = layers.DNSTypeA
-	dnsAnswer.IP = a
-	dnsAnswer.Name = []byte(request.Questions[0].Name)
-	fmt.Println(request.Questions[0].Name)
-	dnsAnswer.Class = layers.DNSClassIN
-	replyMess.QR = true
-	replyMess.ANCount = 1
-	replyMess.OpCode = layers.DNSOpCodeNotify
-	replyMess.AA = true
-	replyMess.Answers = append(replyMess.Answers, dnsAnswer)
-	replyMess.ResponseCode = layers.DNSResponseCodeNoErr
 	buf := gopacket.NewSerializeBuffer()
-	opts := gopacket.SerializeOptions{} // See SerializeOptions for more details.
-	err = replyMess.SerializeTo(buf, opts)
-	if err != nil {
+	opts := gopacket.SerializeOptions{}
+	addReplyMessageToRequest(request)
+	if err := request.SerializeTo(buf, opts); err != nil {
 		panic(err)
 	}
 	u.WriteTo(buf.Bytes(), clientAddr)
+}
+
+func addReplyMessageToRequest(request *layers.DNS) *layers.DNS {
+	request.QR = true
+	request.ANCount = 1
+	request.OpCode = layers.DNSOpCodeNotify
+	request.AA = true
+	request.Answers = append(request.Answers, createRR(request.Questions[0].Name))
+	request.ResponseCode = layers.DNSResponseCodeNoErr
+	return request
+}
+
+func createRR(requestedName []byte) layers.DNSResourceRecord {
+	return layers.DNSResourceRecord{
+		Type:  layers.DNSTypeA,
+		IP:    getIP(requestedName),
+		Name:  []byte(requestedName),
+		Class: layers.DNSClassIN,
+	}
+}
+
+func getIP(requestedName []byte) net.IP {
+	ip, ok := records[string(requestedName)]
+	if !ok {
+		fmt.Printf("%s -> NOT FOUND\n", requestedName)
+	} else {
+		fmt.Printf("%s -> %s\n", requestedName, ip)
+	}
+	parsedIP, _, _ := net.ParseCIDR(ip + "/24")
+	return parsedIP
 }
