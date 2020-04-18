@@ -18,7 +18,9 @@ make
 
 The server is now running on port 8090.
 
-_amazon.com_ and _google.com_ are the hostnames available for querying. Open a second terminal window to run:
+_amazon.com_ and _google.com_ are the hostnames available for querying.  Try adding other records to **records.json**
+
+Open a second terminal window to run:
 
 ```
 > nslookup -port=8090 google.com localhost
