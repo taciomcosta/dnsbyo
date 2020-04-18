@@ -39,4 +39,4 @@ Address: 216.58.196.142
 - [x] Handle unregistered names
 - [x] Add [gopacket](https://github.com/google/gopacket) dependency
 - [x] Easily add new names
-- [] Support reverse lookup
+- [ ] Support reverse lookup
