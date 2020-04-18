@@ -50,7 +50,7 @@ GITHUB_SERVER(.github.com): Sure. IP is xxx.xxx.xxx.xxx, you can cache it for a 
 
 # DNS Zone Types
 - Forward lookup zone: Hostname -> IP Address
-- Reverse lookup zone: IP Address -> Hostname
+- Inverse lookup zone: IP Address -> Hostname
 - Lookup zones contains resource records (RR) for serving DNS queries (Zone file)
 - Zone files can be master file (authoritatively describes a zone) or may be used to list content of DNS cache
 
@@ -65,6 +65,7 @@ GITHUB_SERVER(.github.com): Sure. IP is xxx.xxx.xxx.xxx, you can cache it for a 
 ## Header
 - ID (used to map questions with answers), 
 - QR (query or response)
+- OPCODE (type of query/op standard, inverse, status)
 - AA (authoritative ans)
 - TC (truncated message) 
 - RD (recursion desired)
