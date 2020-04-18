@@ -33,7 +33,7 @@ Address: 216.58.196.142
 ```
 
 ## TODO
-- [ ] Implement basic A type queries
+- [x] Implement basic A type queries
 - [ ] Handle unregistered names
 - [ ] Add [gopacket](https://github.com/google/gopacket) dependency
-- [ ] Easily add new names
+- [x] Easily add new names

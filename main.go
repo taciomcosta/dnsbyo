@@ -1,17 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/google/gopacket"
 	layers "github.com/google/gopacket/layers"
 )
-
-var records map[string]string = map[string]string{
-	"google.com": "216.58.196.142",
-	"amazon.com": "176.32.103.205",
-}
 
 func main() {
 	addr := net.UDPAddr{Port: 8090}
@@ -24,8 +18,8 @@ func main() {
 	}
 }
 
-func readRequestFromBuffer(tmp []byte) *layers.DNS {
-	packet := gopacket.NewPacket(tmp, layers.LayerTypeDNS, gopacket.Default)
+func readRequestFromBuffer(buff []byte) *layers.DNS {
+	packet := gopacket.NewPacket(buff, layers.LayerTypeDNS, gopacket.Default)
 	dnsPacket := packet.Layer(layers.LayerTypeDNS)
 	req, _ := dnsPacket.(*layers.DNS)
 	return req
@@ -33,18 +27,19 @@ func readRequestFromBuffer(tmp []byte) *layers.DNS {
 
 func handle(u *net.UDPConn, clientAddr net.Addr, request *layers.DNS) {
 	transformRequestIntoResponse(request)
-	buf := gopacket.NewSerializeBuffer()
-	opts := gopacket.SerializeOptions{}
-	if err := request.SerializeTo(buf, opts); err != nil {
-		fmt.Printf("Request serialization error")
-	}
-	u.WriteTo(buf.Bytes(), clientAddr)
+	u.WriteTo(serialize(request), clientAddr)
+}
+
+func serialize(req *layers.DNS) []byte {
+	buff := gopacket.NewSerializeBuffer()
+	req.SerializeTo(buff, gopacket.SerializeOptions{})
+	return buff.Bytes()
 }
 
 func transformRequestIntoResponse(request *layers.DNS) *layers.DNS {
 	request.AA = true
-	request.ANCount = uint16(len(request.Questions))
 	request.Answers = createAnswers(request.Questions)
+	request.ANCount = uint16(len(request.Answers))
 	request.OpCode = layers.DNSOpCodeNotify
 	request.QR = true
 	request.ResponseCode = layers.DNSResponseCodeNoErr
@@ -62,14 +57,8 @@ func createAnswers(questions []layers.DNSQuestion) []layers.DNSResourceRecord {
 func createRR(hostname []byte) layers.DNSResourceRecord {
 	return layers.DNSResourceRecord{
 		Type:  layers.DNSTypeA,
-		IP:    getIP(hostname),
+		IP:    findIP(hostname),
 		Name:  []byte(hostname),
 		Class: layers.DNSClassIN,
 	}
-}
-
-func getIP(requestedName []byte) net.IP {
-	ip, _ := records[string(requestedName)]
-	parsedIP, _, _ := net.ParseCIDR(ip + "/24")
-	return parsedIP
 }
