@@ -13,7 +13,7 @@ I intend to follow most part of [this](https://roadmap.sh/backend) roadmap. So t
 Open a terminal window and run:
 
 ```
-go run main.go
+make
 ```
 
 The server is now running on port 8090.
