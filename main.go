@@ -16,54 +16,60 @@ var records map[string]string = map[string]string{
 func main() {
 	addr := net.UDPAddr{Port: 8090}
 	u, _ := net.ListenUDP("udp", &addr)
-
 	for {
-		tmp := make([]byte, 1024)
-		_, addr, _ := u.ReadFrom(tmp)
-		clientAddr := addr
-		packet := gopacket.NewPacket(tmp, layers.LayerTypeDNS, gopacket.Default)
-		dnsPacket := packet.Layer(layers.LayerTypeDNS)
-		tcp, _ := dnsPacket.(*layers.DNS)
-		serveDNS(u, clientAddr, tcp)
+		buff := make([]byte, 1024)
+		_, clientAddr, _ := u.ReadFrom(buff)
+		req := readRequestFromBuffer(buff)
+		handle(u, clientAddr, req)
 	}
 }
 
-func serveDNS(u *net.UDPConn, clientAddr net.Addr, request *layers.DNS) {
+func readRequestFromBuffer(tmp []byte) *layers.DNS {
+	packet := gopacket.NewPacket(tmp, layers.LayerTypeDNS, gopacket.Default)
+	dnsPacket := packet.Layer(layers.LayerTypeDNS)
+	req, _ := dnsPacket.(*layers.DNS)
+	return req
+}
+
+func handle(u *net.UDPConn, clientAddr net.Addr, request *layers.DNS) {
+	transformRequestIntoResponse(request)
 	buf := gopacket.NewSerializeBuffer()
 	opts := gopacket.SerializeOptions{}
-	addReplyMessageToRequest(request)
 	if err := request.SerializeTo(buf, opts); err != nil {
-		panic(err)
+		fmt.Printf("Request serialization error")
 	}
 	u.WriteTo(buf.Bytes(), clientAddr)
 }
 
-func addReplyMessageToRequest(request *layers.DNS) *layers.DNS {
-	request.QR = true
-	request.ANCount = 1
-	request.OpCode = layers.DNSOpCodeNotify
+func transformRequestIntoResponse(request *layers.DNS) *layers.DNS {
 	request.AA = true
-	request.Answers = append(request.Answers, createRR(request.Questions[0].Name))
+	request.ANCount = uint16(len(request.Questions))
+	request.Answers = createAnswers(request.Questions)
+	request.OpCode = layers.DNSOpCodeNotify
+	request.QR = true
 	request.ResponseCode = layers.DNSResponseCodeNoErr
 	return request
 }
 
-func createRR(requestedName []byte) layers.DNSResourceRecord {
+func createAnswers(questions []layers.DNSQuestion) []layers.DNSResourceRecord {
+	var answers []layers.DNSResourceRecord
+	for _, q := range questions {
+		answers = append(answers, createRR(q.Name))
+	}
+	return answers
+}
+
+func createRR(hostname []byte) layers.DNSResourceRecord {
 	return layers.DNSResourceRecord{
 		Type:  layers.DNSTypeA,
-		IP:    getIP(requestedName),
-		Name:  []byte(requestedName),
+		IP:    getIP(hostname),
+		Name:  []byte(hostname),
 		Class: layers.DNSClassIN,
 	}
 }
 
 func getIP(requestedName []byte) net.IP {
-	ip, ok := records[string(requestedName)]
-	if !ok {
-		fmt.Printf("%s -> NOT FOUND\n", requestedName)
-	} else {
-		fmt.Printf("%s -> %s\n", requestedName, ip)
-	}
+	ip, _ := records[string(requestedName)]
 	parsedIP, _, _ := net.ParseCIDR(ip + "/24")
 	return parsedIP
 }
