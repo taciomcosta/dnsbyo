@@ -36,6 +36,7 @@ Address: 216.58.196.142
 
 ## TODO
 - [x] Implement basic A type queries
-- [ ] Handle unregistered names
+- [x] Handle unregistered names
 - [x] Add [gopacket](https://github.com/google/gopacket) dependency
 - [x] Easily add new names
+- [] Support reverse lookup

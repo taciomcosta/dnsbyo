@@ -40,25 +40,42 @@ func transformRequestIntoResponse(request *layers.DNS) *layers.DNS {
 	request.AA = true
 	request.Answers = createAnswers(request.Questions)
 	request.ANCount = uint16(len(request.Answers))
+	request.ResponseCode = responseCode(request)
 	request.OpCode = layers.DNSOpCodeNotify
 	request.QR = true
-	request.ResponseCode = layers.DNSResponseCodeNoErr
 	return request
 }
 
 func createAnswers(questions []layers.DNSQuestion) []layers.DNSResourceRecord {
 	var answers []layers.DNSResourceRecord
 	for _, q := range questions {
-		answers = append(answers, createRR(q.Name))
+		if rr, err := createRR(q.Name); err == nil {
+			answers = append(answers, rr)
+		}
 	}
 	return answers
 }
 
-func createRR(hostname []byte) layers.DNSResourceRecord {
+func createRR(hostname []byte) (layers.DNSResourceRecord, error) {
+	ip, err := findIP(hostname)
+	if err != nil {
+		return layers.DNSResourceRecord{}, err
+	}
+	return existingRR(ip, hostname), nil
+}
+
+func existingRR(ip net.IP, hostname []byte) layers.DNSResourceRecord {
 	return layers.DNSResourceRecord{
 		Type:  layers.DNSTypeA,
-		IP:    findIP(hostname),
+		IP:    ip,
 		Name:  []byte(hostname),
 		Class: layers.DNSClassIN,
 	}
+}
+
+func responseCode(request *layers.DNS) layers.DNSResponseCode {
+	if len(request.Answers) > 0 {
+		return layers.DNSResponseCodeNoErr
+	}
+	return layers.DNSResponseCodeNXDomain
 }

@@ -6,11 +6,11 @@ import (
 	"net"
 )
 
-func findIP(name []byte) net.IP {
+func findIP(name []byte) (net.IP, error) {
 	records := fromJSON("records.json")
 	ip, _ := records[string(name)]
-	parsedIP, _, _ := net.ParseCIDR(ip + "/24")
-	return parsedIP
+	parsedIP, _, err := net.ParseCIDR(ip + "/24")
+	return parsedIP, err
 }
 
 func fromJSON(path string) map[string]string {
