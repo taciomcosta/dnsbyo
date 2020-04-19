@@ -22,7 +22,6 @@ func handleRequest() {
 	buff := make([]byte, 1024)
 	_, clientAddr, _ := conn.ReadFrom(buff)
 	dnsPacket := packet.NewDNSPacket(buff)
-
 	packet.TransformQueryIntoResponse(dnsPacket)
 	conn.WriteTo(packet.Serialize(dnsPacket), clientAddr)
 }
