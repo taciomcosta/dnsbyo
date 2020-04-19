@@ -1,19 +1,20 @@
 package main
 
 import (
+	"github.com/taciomcosta/dnsbyo/dns"
 	"net"
 	"strings"
 
 	layers "github.com/google/gopacket/layers"
 )
 
-func transformQueryIntoResponse(query *layers.DNS) *layers.DNS {
-	query.AA = true
-	query.Answers = createAnswers(query)
-	query.ANCount = uint16(len(query.Answers))
-	query.ResponseCode = responseCode(query)
-	query.QR = true
-	return query
+func transformQueryIntoResponse(dnsPacket *layers.DNS) *layers.DNS {
+	dnsPacket.AA = true
+	dnsPacket.Answers = createAnswers(dnsPacket)
+	dnsPacket.ANCount = uint16(len(dnsPacket.Answers))
+	dnsPacket.ResponseCode = responseCode(dnsPacket)
+	dnsPacket.QR = true
+	return dnsPacket
 }
 
 func createAnswers(req *layers.DNS) []layers.DNSResourceRecord {
@@ -26,11 +27,11 @@ func createAnswers(req *layers.DNS) []layers.DNSResourceRecord {
 	return answers
 }
 
-func createRR(query *layers.DNS, i int) (layers.DNSResourceRecord, error) {
-	if isReverseLookup(query.Questions[0].Name) {
-		return reverseRR(query.Questions[0].Name)
+func createRR(dnsPacket *layers.DNS, i int) (layers.DNSResourceRecord, error) {
+	if isReverseLookup(dnsPacket.Questions[i].Name) {
+		return reverseRR(dnsPacket.Questions[i].Name)
 	}
-	return standardRR(query.Questions[0].Name)
+	return standardRR(dnsPacket.Questions[i].Name)
 }
 
 func isReverseLookup(name []byte) bool {
@@ -38,7 +39,7 @@ func isReverseLookup(name []byte) bool {
 }
 
 func standardRR(hostname []byte) (layers.DNSResourceRecord, error) {
-	ip, err := findIP(string(hostname))
+	ip, err := dns.FindIP(string(hostname))
 	if err != nil {
 		return layers.DNSResourceRecord{}, err
 	}
@@ -54,8 +55,8 @@ func existingRR(ip net.IP, hostname []byte) layers.DNSResourceRecord {
 	}
 }
 
-func responseCode(query *layers.DNS) layers.DNSResponseCode {
-	if len(query.Answers) > 0 {
+func responseCode(dnsPacket *layers.DNS) layers.DNSResponseCode {
+	if len(dnsPacket.Answers) > 0 {
 		return layers.DNSResponseCodeNoErr
 	}
 	return layers.DNSResponseCodeNXDomain
@@ -63,7 +64,7 @@ func responseCode(query *layers.DNS) layers.DNSResponseCode {
 
 func reverseRR(ipInAddrArpa []byte) (layers.DNSResourceRecord, error) {
 	ip := parseInAddrArpa(ipInAddrArpa)
-	name, err := findName(ip)
+	name, err := dns.FindName(ip)
 	if err != nil {
 		return layers.DNSResourceRecord{}, err
 	}

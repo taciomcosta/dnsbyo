@@ -1,4 +1,4 @@
-package main
+package dns
 
 import (
 	"encoding/json"
@@ -9,14 +9,14 @@ import (
 
 const recordsFilePath = "records.json"
 
-func findIP(name string) (net.IP, error) {
+func FindIP(name string) (net.IP, error) {
 	records := fromRecordsFile()
 	ip, _ := records[name]
 	parsedIP, _, err := net.ParseCIDR(ip + "/24")
 	return parsedIP, err
 }
 
-func findName(requestedIP net.IP) ([]byte, error) {
+func FindName(requestedIP net.IP) ([]byte, error) {
 	records := fromRecordsFile()
 	for name, ip := range records {
 		if requestedIP.Equal(net.ParseIP(ip)) {
