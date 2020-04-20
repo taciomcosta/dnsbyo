@@ -31,14 +31,14 @@ func createRR(dnsPacket *layers.DNS, i int) (layers.DNSResourceRecord, error) {
 	if isReverseLookup(dnsPacket.Questions[i].Name) {
 		return reverseRR(dnsPacket.Questions[i].Name)
 	}
-	return standardRR(dnsPacket.Questions[i].Name)
+	return standardRR(string(dnsPacket.Questions[i].Name))
 }
 
 func isReverseLookup(name []byte) bool {
 	return strings.HasSuffix(string(name), ".in-addr.arpa")
 }
 
-func standardRR(hostname []byte) (layers.DNSResourceRecord, error) {
+func standardRR(hostname string) (layers.DNSResourceRecord, error) {
 	ip, err := dns.FindIP(string(hostname))
 	if err != nil {
 		return layers.DNSResourceRecord{}, err
@@ -46,7 +46,7 @@ func standardRR(hostname []byte) (layers.DNSResourceRecord, error) {
 	return existingRR(ip, hostname), nil
 }
 
-func existingRR(ip net.IP, hostname []byte) layers.DNSResourceRecord {
+func existingRR(ip net.IP, hostname string) layers.DNSResourceRecord {
 	return layers.DNSResourceRecord{
 		Type:  layers.DNSTypeA,
 		IP:    ip,

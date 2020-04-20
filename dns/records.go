@@ -7,7 +7,11 @@ import (
 	"net"
 )
 
-const recordsFilePath = "records.json"
+var recordsFilePath string
+
+func init() {
+	recordsFilePath = "dns/records.json"
+}
 
 func FindIP(name string) (net.IP, error) {
 	records := fromRecordsFile()
@@ -16,14 +20,14 @@ func FindIP(name string) (net.IP, error) {
 	return parsedIP, err
 }
 
-func FindName(requestedIP net.IP) ([]byte, error) {
+func FindName(requestedIP net.IP) (string, error) {
 	records := fromRecordsFile()
 	for name, ip := range records {
 		if requestedIP.Equal(net.ParseIP(ip)) {
-			return []byte(name), nil
+			return name, nil
 		}
 	}
-	return []byte{}, fmt.Errorf("No name found for %s", requestedIP.String())
+	return "", fmt.Errorf("No name found for %s", requestedIP.String())
 }
 
 func fromRecordsFile() map[string]string {
