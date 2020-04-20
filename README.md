@@ -40,3 +40,4 @@ Address: 216.58.196.142
 - [x] Add [gopacket](https://github.com/google/gopacket) dependency
 - [x] Easily add new names
 - [x] Support reverse lookup
+- [ ] Support zone files
