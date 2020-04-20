@@ -41,3 +41,4 @@ Address: 216.58.196.142
 - [x] Easily add new names
 - [x] Support reverse lookup
 - [ ] Support zone files
+- [ ] Support recursive resolution
