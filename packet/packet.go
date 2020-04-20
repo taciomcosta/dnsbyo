@@ -12,8 +12,8 @@ func NewDNSPacket(buff []byte) *layers.DNS {
 	return dnsPacket
 }
 
-func Serialize(packet *layers.DNS) []byte {
+func Serialize(dnsPacket *layers.DNS) []byte {
 	buff := gopacket.NewSerializeBuffer()
-	packet.SerializeTo(buff, gopacket.SerializeOptions{})
+	dnsPacket.SerializeTo(buff, gopacket.SerializeOptions{})
 	return buff.Bytes()
 }
