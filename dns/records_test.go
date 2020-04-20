@@ -2,6 +2,7 @@ package dns
 
 import (
 	"net"
+	"os"
 	"testing"
 )
 
@@ -10,12 +11,12 @@ var FindIPTests map[string]string = map[string]string{
 	"amazon.com": "176.32.103.205",
 }
 
-func setup() {
+func TestMain(m *testing.M) {
 	recordsFilePath = "records.json"
+	os.Exit(m.Run())
 }
 
 func TestFindIP(t *testing.T) {
-	setup()
 	for name, ip := range FindIPTests {
 		got, err := FindIP(name)
 		if err != nil {
@@ -33,7 +34,6 @@ var FindNameTests map[string]string = map[string]string{
 }
 
 func TestFindName(t *testing.T) {
-	setup()
 	for ip, name := range FindNameTests {
 		got, err := FindName(net.ParseIP(ip))
 		if err != nil {
