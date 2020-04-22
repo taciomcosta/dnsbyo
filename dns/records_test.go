@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 
 func TestFindIP(t *testing.T) {
 	for name, ip := range FindIPTests {
-		got, err := FindIP(name)
+		got, err := findIP(name)
 		if err != nil {
 			t.Error(err)
 		}
@@ -35,7 +35,7 @@ var FindNameTests map[string]string = map[string]string{
 
 func TestFindName(t *testing.T) {
 	for ip, name := range FindNameTests {
-		got, err := FindName(net.ParseIP(ip))
+		got, err := findName(net.ParseIP(ip))
 		if err != nil {
 			t.Error(err)
 		}
